@@ -1,19 +1,23 @@
-apply plugin: 'com.android.library'
+apply from: "${rootProject.rootDir}/common_config.gradle"    //引用额外的配置
+if (project.ext.isSoulVideoDebug) {
+    apply plugin: 'com.android.application'  //组件开发模式，独立运行
+} else {
+    apply plugin: 'com.android.library'  //集成开发模式
+}
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "29.0.0"
-
+    project.ext.setDefaultConfig android    //调用配置信息
 
     defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [AROUTER_MODULE_NAME: project.getName()]
+            }
+        }
     }
+
 
     buildTypes {
         release {
@@ -22,13 +26,29 @@ android {
         }
     }
 
+
+    sourceSets {
+        main {
+            if (project.ext.isSoulVideoDebug) {
+                manifest.srcFile 'src/main/module/AndroidManifest.xml'
+            } else {
+                manifest.srcFile 'src/main/AndroidManifest.xml'
+                resources {  //排除module下的所有文件
+                    exclude 'src/main/module/*'
+                }
+            }
+        }
+    }
+
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.android.support:appcompat-v7:28.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    annotationProcessor 'com.alibaba:arouter-compiler:1.2.1'
+
+    implementation project(path: ':kotlin_baseLib')
 }
