@@ -1,6 +1,8 @@
 package com.soul_video
 
 import android.os.Bundle
+import com.alibaba.android.arouter.launcher.ARouter
+import com.kotlin_baselib.api.Constants
 import com.kotlin_baselib.base.BaseFragment
 import com.kotlin_baselib.base.EmptyModelImpl
 import com.kotlin_baselib.base.EmptyPresenterImpl
@@ -51,6 +53,9 @@ class VideoFragment : BaseFragment<EmptyView, EmptyModelImpl, EmptyPresenterImpl
     }
 
     override fun initListener() {
+        record_video.setOnClickListener {
+            ARouter.getInstance().build(Constants.RECORD_VIDEO_ACTIVITY_PATH).navigation()
+        }
     }
 
     override fun lazyLoad() {

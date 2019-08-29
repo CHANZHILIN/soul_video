@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    tools:context=".recordVideo.VideoRecordActivity">
+
+    <FrameLayout
+        android:id="@+id/fl_surface"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.soul_video.recordVideo.AutoFitTextureView
+            android:id="@+id/texture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <ImageView
+                android:id="@+id/iv_record_video_close"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@mipmap/close" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/iv_switch_flash_light"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginRight="10dp"
+                android:src="@mipmap/flash_off" />
+
+            <ImageView
+                android:id="@+id/iv_switch_front_back"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@mipmap/refresh" />
+        </LinearLayout>
+
+        <com.soul_video.recordVideo.ProgressView
+            android:id="@+id/video_record_progress_view"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom"
+            android:background="@color/colorPrimary"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:layout_alignParentBottom="true">
+
+        <com.kotlin_baselib.view.CircleButton
+            android:id="@+id/btn_record_video"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:circle_background="@color/colorPrimary"
+            app:circle_text="拍照"
+            app:circle_textColor="@color/white"
+            app:circle_textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/iv_switch_picture_video"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginLeft="30dp"
+            android:scaleType="centerInside"
+            android:src="@mipmap/video"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/btn_record_video"
+            app:layout_constraintTop_toTopOf="parent" />
+    </android.support.constraint.ConstraintLayout>
+
+
+</RelativeLayout>
