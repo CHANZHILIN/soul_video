@@ -27,7 +27,7 @@ class ExtractVideoFrameTask(context: Context, path: String) : AsyncTask<Void, Vo
     override fun onPreExecute() {
         super.onPreExecute()
         if (progressDialog == null) {
-            progressDialog = AlertDialog.Builder(mContext).setMessage("正在加载").create()
+            progressDialog = AlertDialog.Builder(mContext).setMessage("正在加载中...").create()
             progressDialog!!.show()
         } else {
             progressDialog!!.show()

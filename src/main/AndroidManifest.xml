@@ -10,7 +10,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application>
-        <activity android:name=".editVideo.EditVideoActivity"/>
+        <activity android:name=".editVideo.EditVideoActivity">
+
+        </activity>
         <activity android:name=".recordVideo.VideoRecordActivity" />
     </application>
 

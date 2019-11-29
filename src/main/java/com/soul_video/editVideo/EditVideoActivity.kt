@@ -2,6 +2,8 @@ package com.soul_video.editVideo
 
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
+import android.view.WindowManager
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
@@ -10,8 +12,11 @@ import com.kotlin_baselib.base.BaseActivity
 import com.kotlin_baselib.base.EmptyModelImpl
 import com.kotlin_baselib.base.EmptyPresenterImpl
 import com.kotlin_baselib.base.EmptyView
+import com.kotlin_baselib.media.decoder.AudioDecoder
+import com.kotlin_baselib.media.decoder.VideoDecoder
 import com.soul_video.R
 import kotlinx.android.synthetic.main.activity_edit_video.*
+import java.util.concurrent.Executors
 
 /**
  *  Created by CHEN on 2019/8/01
@@ -28,14 +33,28 @@ class EditVideoActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenter
 
     private lateinit var extractVideoFrameTask: ExtractVideoFrameTask
 
+    lateinit var videoDecoder: VideoDecoder
+    lateinit var audioDecoder: AudioDecoder
+
+    val threadPool = Executors.newFixedThreadPool(10)
+
     override fun createPresenter(): EmptyPresenterImpl = EmptyPresenterImpl(this)
 
     override fun getResId(): Int = R.layout.activity_edit_video
 
+    override fun preSetContentView() {
+        super.preSetContentView()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        }
+    }
+
     override fun initData() {
-        setTitle("编辑视频")
         ARouter.getInstance().inject(this)
-        extractVideoFrameTask = ExtractVideoFrameTask(this,videoPath!!)
+        videoPath = "/storage/emulated/0/test.mp4"
+        initPlayer()
+
+        extractVideoFrameTask = ExtractVideoFrameTask(this, videoPath!!)
         extractVideoFrameTask.execute()
         extractVideoFrameTask.setOnCompletedListener(object : ExtractVideoFrameTask.OnCallBack {
             override fun completed(bitmap: Bitmap) {
@@ -45,6 +64,47 @@ class EditVideoActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenter
     }
 
     override fun initListener() {
+
+        btn_seek_to.setOnClickListener {
+            videoDecoder.apply {
+                seekAndPlay(5000000)
+            }
+            audioDecoder.apply {
+                seekAndPlay(5000000)
+            }
+        }
+        btn_pause.setOnClickListener {
+            videoDecoder.pause()
+            audioDecoder.pause()
+        }
+        btn_start.setOnClickListener {
+            videoDecoder.goOnDecode()
+            audioDecoder.goOnDecode()
+        }
+    }
+
+
+    private fun initPlayer() {
+
+        videoDecoder = VideoDecoder(videoPath!!, edit_video_sfv, null)
+        threadPool.execute(videoDecoder)
+
+        audioDecoder = AudioDecoder(videoPath!!)
+        threadPool.execute(audioDecoder)
+
+
+    }
+
+    override fun onDestroy() {
+        videoDecoder.stop()
+        audioDecoder.stop()
+        super.onDestroy()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        videoDecoder.pause()
+        audioDecoder.pause()
     }
 
 }
