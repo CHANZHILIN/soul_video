@@ -25,8 +25,8 @@ import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
-import com.kotlin_baselib.mvvmbase.BaseViewModelActivity
-import com.kotlin_baselib.mvvmbase.EmptyViewModel
+import com.kotlin_baselib.base.BaseViewModelActivity
+import com.kotlin_baselib.base.EmptyViewModel
 import com.kotlin_baselib.utils.DateUtil
 import com.kotlin_baselib.utils.PermissionUtils
 import com.kotlin_baselib.utils.SdCardUtil

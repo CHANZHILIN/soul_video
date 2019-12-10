@@ -1,8 +1,8 @@
 package com.soul_video
 
 import android.os.Bundle
-import com.kotlin_baselib.mvvmbase.BaseViewModelFragment
-import com.kotlin_baselib.mvvmbase.EmptyViewModel
+import com.kotlin_baselib.base.BaseViewModelFragment
+import com.kotlin_baselib.base.EmptyViewModel
 import kotlinx.android.synthetic.main.fragment_video.*
 
 

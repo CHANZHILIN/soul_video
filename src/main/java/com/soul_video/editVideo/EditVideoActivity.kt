@@ -10,8 +10,8 @@ import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
 import com.kotlin_baselib.media.decoder.AudioDecoder
 import com.kotlin_baselib.media.decoder.VideoDecoder
-import com.kotlin_baselib.mvvmbase.BaseViewModelActivity
-import com.kotlin_baselib.mvvmbase.EmptyViewModel
+import com.kotlin_baselib.base.BaseViewModelActivity
+import com.kotlin_baselib.base.EmptyViewModel
 import com.soul_video.R
 import kotlinx.android.synthetic.main.activity_edit_video.*
 import java.util.concurrent.Executors
