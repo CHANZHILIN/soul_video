@@ -1,12 +1,8 @@
 package com.soul_video
 
 import android.os.Bundle
-import com.alibaba.android.arouter.launcher.ARouter
-import com.kotlin_baselib.api.Constants
-import com.kotlin_baselib.base.BaseFragment
-import com.kotlin_baselib.base.EmptyModelImpl
-import com.kotlin_baselib.base.EmptyPresenterImpl
-import com.kotlin_baselib.base.EmptyView
+import com.kotlin_baselib.mvvmbase.BaseViewModelFragment
+import com.kotlin_baselib.mvvmbase.EmptyViewModel
 import kotlinx.android.synthetic.main.fragment_video.*
 
 
@@ -18,10 +14,12 @@ private const val ARG_PARAM1 = "param1"
  *  Package:com.soul_video
  *  Introduce:视频Fragment
  **/
-class VideoFragment : BaseFragment<EmptyView, EmptyModelImpl, EmptyPresenterImpl>(), EmptyView {
+class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
 
-    override fun createPresenter(): EmptyPresenterImpl {
-        return EmptyPresenterImpl(this)
+    override fun providerVMClass(): Class<EmptyViewModel>? = EmptyViewModel::class.java
+
+    override fun getResId(): Int {
+        return R.layout.fragment_video
     }
 
     private var param1: String? = null
@@ -37,27 +35,21 @@ class VideoFragment : BaseFragment<EmptyView, EmptyModelImpl, EmptyPresenterImpl
     companion object {
         @JvmStatic
         fun newInstance(param1: String) =
-                VideoFragment().apply {
-                    arguments = Bundle().apply {
-                        putString(ARG_PARAM1, param1)
-                    }
+            VideoFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
                 }
+            }
     }
 
-    override fun getResId(): Int {
-        return R.layout.fragment_video
-    }
 
     override fun initData() {
         fragment_text.setText(param1)
     }
 
     override fun initListener() {
-        record_video.setOnClickListener {
+        /*record_video.setOnClickListener {
             ARouter.getInstance().build(Constants.RECORD_VIDEO_ACTIVITY_PATH).navigation()
-        }
-    }
-
-    override fun lazyLoad() {
+        }*/
     }
 }

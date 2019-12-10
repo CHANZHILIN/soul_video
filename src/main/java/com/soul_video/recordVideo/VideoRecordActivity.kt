@@ -16,18 +16,17 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
-import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.util.Size
 import android.util.SparseIntArray
 import android.view.*
+import androidx.core.app.ActivityCompat
+import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
-import com.kotlin_baselib.base.BaseActivity
-import com.kotlin_baselib.base.EmptyModelImpl
-import com.kotlin_baselib.base.EmptyPresenterImpl
-import com.kotlin_baselib.base.EmptyView
+import com.kotlin_baselib.mvvmbase.BaseViewModelActivity
+import com.kotlin_baselib.mvvmbase.EmptyViewModel
 import com.kotlin_baselib.utils.DateUtil
 import com.kotlin_baselib.utils.PermissionUtils
 import com.kotlin_baselib.utils.SdCardUtil
@@ -51,7 +50,12 @@ import kotlin.collections.ArrayList
  **/
 @SuppressLint("NewApi")
 @Route(path = Constants.RECORD_VIDEO_ACTIVITY_PATH)
-class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenterImpl>(), EmptyView {
+class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
+
+
+    override fun providerVMClass(): Class<EmptyViewModel>? = EmptyViewModel::class.java
+
+    override fun getResId(): Int = R.layout.activity_video_record
 
 
     private val MAX_VIDEO_RECORD_TIME: Int = 10     //录制时长最长10S
@@ -61,7 +65,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     private var isLightOn: Boolean = false  //是否打开闪光灯
     private val CAPTURE_OK: Int = 101   //拍照完成
     private val RECORD_VIDEO_OK: Int = 102   //录制完成
-    private var mCameraMode = 0     //模式：0为拍照   1为录视频
+
+    @JvmField
+    @Autowired(name = "CameraMode")
+    var mCameraMode: Int = 0     //模式：0为拍照   1为录视频
     private var isCameraFront = false//当前是否是前置摄像头
     private lateinit var characteristics: CameraCharacteristics
     private var mImageReader: ImageReader? = null
@@ -153,21 +160,30 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a
      * [TextureView].
      */
-    private val surfaceTextureListener: TextureView.SurfaceTextureListener = object : TextureView.SurfaceTextureListener {
+    private val surfaceTextureListener: TextureView.SurfaceTextureListener =
+        object : TextureView.SurfaceTextureListener {
 
-        override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {
-            openCamera(width, height)
+            override fun onSurfaceTextureAvailable(
+                texture: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) {
+                openCamera(width, height)
+            }
+
+            override fun onSurfaceTextureSizeChanged(
+                texture: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) {
+                configureTransform(width, height)
+            }
+
+            override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture) = true
+
+            override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
+
         }
-
-        override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) {
-            configureTransform(width, height)
-        }
-
-        override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture) = true
-
-        override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
-
-    }
 
 
     /**
@@ -197,8 +213,6 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
 
     }
 
-    override fun createPresenter(): EmptyPresenterImpl = EmptyPresenterImpl(this)
-
     override fun preSetContentView() {
         super.preSetContentView()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -206,11 +220,15 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
         }
     }
 
-    override fun getResId(): Int = R.layout.activity_video_record
-
 
     override fun initData() {
-
+        btn_record_video.setButtonText(if (mCameraMode == 0) "拍照" else "录制")
+        iv_switch_picture_video.setImageBitmap(
+            BitmapFactory.decodeResource(
+                resources,
+                if (mCameraMode == 0) R.mipmap.video else R.mipmap.camera
+            )
+        )
     }
 
 
@@ -233,14 +251,22 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
         iv_switch_front_back.setOnClickListener {
             if (!isRecordingVideo)
                 switchCamera()  //切换前后摄像头
-            else SnackbarUtil.ShortSnackbar(window.decorView, "视频正在录制中，请完成录制再操作", SnackbarUtil.WARNING).show()
+            else SnackbarUtil.ShortSnackbar(
+                texture,
+                "视频正在录制中，请完成录制再操作",
+                SnackbarUtil.WARNING
+            ).show()
         }
 
         iv_switch_picture_video.setOnClickListener {
             if (!isRecordingVideo)
             //切换拍照，视频
                 switchCameraMode()
-            else SnackbarUtil.ShortSnackbar(window.decorView, "视频正在录制中，请完成录制再操作", SnackbarUtil.WARNING).show()
+            else SnackbarUtil.ShortSnackbar(
+                texture,
+                "视频正在录制中，请完成录制再操作",
+                SnackbarUtil.WARNING
+            ).show()
         }
         iv_switch_flash_light.setOnClickListener {
             //开启闪光灯
@@ -287,11 +313,13 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             when (it.what) {
                 CAPTURE_OK -> {
                     //这里拍照保存完成，可以进行相关的操作，例如再次压缩等
-                    SnackbarUtil.ShortSnackbar(window.decorView, "拍照完成，保存路径为${it.obj}", SnackbarUtil.WARNING).show()
+                    SnackbarUtil.ShortSnackbar(texture, "拍照完成，保存路径为${it.obj}", SnackbarUtil.WARNING)
+                        .show()
                 }
                 RECORD_VIDEO_OK -> {
                     //这里录制视频保存完成，可以进行相关的操作，例如再次压缩等
-                    ARouter.getInstance().build(Constants.EDIT_VIDEO_ACTIVITY_PATH).withString("videoPath", it.obj as String).navigation()
+                    ARouter.getInstance().build(Constants.EDIT_VIDEO_ACTIVITY_PATH)
+                        .withString("videoPath", it.obj as String).navigation()
                 }
             }
             true
@@ -321,29 +349,40 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     private fun openCamera(width: Int, height: Int) {
 
         //申请权限
-        if (PermissionUtils.isGranted(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+        if (PermissionUtils.isGranted(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        ) {
 
         } else {
-            PermissionUtils.permission(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    .callBack(object : PermissionUtils.PermissionCallBack {
-                        override fun onGranted(permissionUtils: PermissionUtils) {
-                            //重新打开
-                            if (texture.isAvailable) {
-                                openCamera(texture.width, texture.height)
-                            } else {
-                                texture.surfaceTextureListener = surfaceTextureListener
-                            }
+            PermissionUtils.permission(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+                .callBack(object : PermissionUtils.PermissionCallBack {
+                    override fun onGranted(permissionUtils: PermissionUtils) {
+                        //重新打开
+                        if (texture.isAvailable) {
+                            openCamera(texture.width, texture.height)
+                        } else {
+                            texture.surfaceTextureListener = surfaceTextureListener
                         }
+                    }
 
-                        override fun onDenied(permissionUtils: PermissionUtils) {
-                            SnackbarUtil.ShortSnackbar(
-                                    window.decorView,
-                                    "拒绝了权限，将无法使用相机功能",
-                                    SnackbarUtil.WARNING
-                            ).show()
-                            return
-                        }
-                    }).request(this)
+                    override fun onDenied(permissionUtils: PermissionUtils) {
+                        SnackbarUtil.ShortSnackbar(
+                            texture,
+                            "拒绝了权限，将无法使用相机功能",
+                            SnackbarUtil.WARNING
+                        ).show()
+                        return
+                    }
+                }).request(this)
         }
 
 
@@ -367,14 +406,19 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
 
 //            val characteristics = manager.getCameraCharacteristics(mCameraId)
             val map = characteristics.get(SCALER_STREAM_CONFIGURATION_MAP)
-                    ?: throw RuntimeException("Cannot get available preview/video sizes")
+                ?: throw RuntimeException("Cannot get available preview/video sizes")
             sensorOrientation = characteristics.get(SENSOR_ORIENTATION)
             videoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder::class.java))
-            previewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture::class.java),
-                    width, height, videoSize)
+            previewSize = chooseOptimalSize(
+                map.getOutputSizes(SurfaceTexture::class.java),
+                width, height, videoSize
+            )
 
             //获取相机支持的最大拍照尺寸
-            mCaptureSize = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG))) { lhs, rhs -> signum((lhs.width * lhs.height - rhs.height * rhs.width).toLong()) }
+            mCaptureSize =
+                Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG))) { lhs, rhs ->
+                    signum((lhs.width * lhs.height - rhs.height * rhs.width).toLong())
+                }
 
             if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 texture.setAspectRatio(mCaptureSize.width, mCaptureSize.height)
@@ -387,7 +431,11 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
 
             mediaRecorder = MediaRecorder() //用于摄像
 
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.CAMERA
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
                 return
             }
             if (isCameraFront)
@@ -396,9 +444,9 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
                 manager.openCamera(cameraId, stateCallback, null)
         } catch (e: CameraAccessException) {
             SnackbarUtil.ShortSnackbar(
-                    window.decorView,
-                    "打开相机失败",
-                    SnackbarUtil.WARNING
+                texture,
+                "打开相机失败",
+                SnackbarUtil.WARNING
             ).show()
             this.finish()
         } catch (e: NullPointerException) {
@@ -406,9 +454,9 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             // device this code runs.
 
             SnackbarUtil.ShortSnackbar(
-                    window.decorView,
-                    "打开相机失败",
-                    SnackbarUtil.WARNING
+                texture,
+                "打开相机失败",
+                SnackbarUtil.WARNING
             ).show()
         } catch (e: InterruptedException) {
             throw RuntimeException("Interrupted while trying to lock camera opening.")
@@ -419,8 +467,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     private fun setupImageReader() {
 
         //2代表ImageReader中最多可以获取两帧图像流
-        mImageReader = ImageReader.newInstance(mCaptureSize.width, mCaptureSize.height,
-                ImageFormat.JPEG, 2)
+        mImageReader = ImageReader.newInstance(
+            mCaptureSize.width, mCaptureSize.height,
+            ImageFormat.JPEG, 2
+        )
         mImageReader!!.setOnImageAvailableListener({ reader ->
 
             val mImage = reader.acquireNextImage()
@@ -461,19 +511,29 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             return
         }
         try {
-            val mCaptureBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
+            val mCaptureBuilder =
+                cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
             //获取屏幕方向
             val rotation = windowManager.defaultDisplay.rotation
             mCaptureBuilder.addTarget(mImageReader!!.surface)
             //isCameraFront是自定义的一个boolean值，用来判断是不是前置摄像头，是的话需要旋转180°，不然拍出来的照片会歪了
             if (isCameraFront) {
-                mCaptureBuilder.set(CaptureRequest.JPEG_ORIENTATION, DEFAULT_ORIENTATIONS.get(Surface.ROTATION_180))
+                mCaptureBuilder.set(
+                    CaptureRequest.JPEG_ORIENTATION,
+                    DEFAULT_ORIENTATIONS.get(Surface.ROTATION_180)
+                )
             } else {
-                mCaptureBuilder.set(CaptureRequest.JPEG_ORIENTATION, DEFAULT_ORIENTATIONS.get(rotation))
+                mCaptureBuilder.set(
+                    CaptureRequest.JPEG_ORIENTATION,
+                    DEFAULT_ORIENTATIONS.get(rotation)
+                )
             }
 
             //锁定焦点
-            mCaptureBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_START)
+            mCaptureBuilder.set(
+                CaptureRequest.CONTROL_AF_TRIGGER,
+                CameraMetadata.CONTROL_AF_TRIGGER_START
+            )
 
             //判断预览的时候是不是已经开启了闪光灯
             if (isLightOn) {
@@ -486,7 +546,11 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             mCaptureBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoom)
 
             val CaptureCallback = object : CameraCaptureSession.CaptureCallback() {
-                override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
+                override fun onCaptureCompleted(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    result: TotalCaptureResult
+                ) {
                     //拍完照unLockFocus
                     unLockFocus()
                 }
@@ -504,11 +568,18 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     private fun unLockFocus() {
         try {
             // 构建失能AF的请求
-            previewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL)
+            previewRequestBuilder.set(
+                CaptureRequest.CONTROL_AF_TRIGGER,
+                CameraMetadata.CONTROL_AF_TRIGGER_CANCEL
+            )
             //闪光灯重置为未开启状态
             previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
             //继续开启预览
-            captureSession?.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler)
+            captureSession?.setRepeatingRequest(
+                previewRequestBuilder.build(),
+                null,
+                backgroundHandler
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -539,7 +610,12 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
         when (mCameraMode) {
             0 -> {       //拍照换成视频
                 btn_record_video.setButtonText("录制")
-                iv_switch_picture_video.setImageBitmap(BitmapFactory.decodeResource(resources, R.mipmap.camera))
+                iv_switch_picture_video.setImageBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.mipmap.camera
+                    )
+                )
                 mCameraMode = 1
                 isRecordingVideo = false
                 video_record_progress_view.visibility = View.VISIBLE
@@ -547,7 +623,12 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             }
             1 -> {        //录制视频换成拍照
                 btn_record_video.setButtonText("拍照")
-                iv_switch_picture_video.setImageBitmap(BitmapFactory.decodeResource(resources, R.mipmap.video))
+                iv_switch_picture_video.setImageBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.mipmap.video
+                    )
+                )
                 mCameraMode = 0
                 isRecordingVideo = false
                 video_record_progress_view.visibility = View.GONE
@@ -561,21 +642,39 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     private fun switchFlashLight() {
         when (isLightOn) {
             true -> {   //关闭闪光灯
-                iv_switch_flash_light.setImageBitmap(BitmapFactory.decodeResource(resources, R.mipmap.flash_off))
-                previewRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                        CaptureRequest.FLASH_MODE_OFF)
+                iv_switch_flash_light.setImageBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.mipmap.flash_off
+                    )
+                )
+                previewRequestBuilder.set(
+                    CaptureRequest.FLASH_MODE,
+                    CaptureRequest.FLASH_MODE_OFF
+                )
                 isLightOn = false
             }
             false -> {//开启闪光灯
-                iv_switch_flash_light.setImageBitmap(BitmapFactory.decodeResource(resources, R.mipmap.flash_on))
-                previewRequestBuilder.set(CaptureRequest.FLASH_MODE,
-                        CaptureRequest.FLASH_MODE_TORCH)
+                iv_switch_flash_light.setImageBitmap(
+                    BitmapFactory.decodeResource(
+                        resources,
+                        R.mipmap.flash_on
+                    )
+                )
+                previewRequestBuilder.set(
+                    CaptureRequest.FLASH_MODE,
+                    CaptureRequest.FLASH_MODE_TORCH
+                )
                 isLightOn = true
             }
         }
 
         try {
-            captureSession?.setRepeatingRequest(previewRequestBuilder.build(), null, backgroundHandler)
+            captureSession?.setRepeatingRequest(
+                previewRequestBuilder.build(),
+                null,
+                backgroundHandler
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -612,7 +711,8 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             closePreviewSession()
             val surfaceTexture = texture.surfaceTexture
             surfaceTexture.setDefaultBufferSize(previewSize.width, previewSize.height)
-            previewRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
+            previewRequestBuilder =
+                cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
 
             val previewSurface = Surface(surfaceTexture)
             previewRequestBuilder.addTarget(previewSurface)
@@ -620,22 +720,24 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             //默认预览不开启闪光灯
             previewRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
 
-            cameraDevice?.createCaptureSession(listOf(previewSurface, mImageReader!!.surface),
-                    object : CameraCaptureSession.StateCallback() {
+            cameraDevice?.createCaptureSession(
+                listOf(previewSurface, mImageReader!!.surface),
+                object : CameraCaptureSession.StateCallback() {
 
-                        override fun onConfigured(session: CameraCaptureSession) {
-                            captureSession = session
-                            updatePreview()
-                        }
+                    override fun onConfigured(session: CameraCaptureSession) {
+                        captureSession = session
+                        updatePreview()
+                    }
 
-                        override fun onConfigureFailed(session: CameraCaptureSession) {
-                            SnackbarUtil.ShortSnackbar(
-                                    window.decorView,
-                                    "Failed",
-                                    SnackbarUtil.WARNING
-                            ).show()
-                        }
-                    }, backgroundHandler)
+                    override fun onConfigureFailed(session: CameraCaptureSession) {
+                        SnackbarUtil.ShortSnackbar(
+                            texture,
+                            "Failed",
+                            SnackbarUtil.WARNING
+                        ).show()
+                    }
+                }, backgroundHandler
+            )
         } catch (e: CameraAccessException) {
             Log.e(Constants.DEBUG_TAG, e.toString())
         }
@@ -651,8 +753,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
         try {
             setUpCaptureRequestBuilder(previewRequestBuilder)
             HandlerThread("CameraPreview").start()
-            captureSession?.setRepeatingRequest(previewRequestBuilder.build(),
-                    null, backgroundHandler)
+            captureSession?.setRepeatingRequest(
+                previewRequestBuilder.build(),
+                null, backgroundHandler
+            )
         } catch (e: CameraAccessException) {
             Log.e(Constants.DEBUG_TAG, e.toString())
         }
@@ -684,8 +788,9 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY())
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
             val scale = Math.max(
-                    viewHeight.toFloat() / previewSize.height,
-                    viewWidth.toFloat() / previewSize.width)
+                viewHeight.toFloat() / previewSize.height,
+                viewWidth.toFloat() / previewSize.width
+            )
             with(matrix) {
                 postScale(scale, scale, centerX, centerY)
                 postRotate((90 * (rotation - 2)).toFloat(), centerX, centerY)
@@ -699,7 +804,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
      * 保存视频地址
      */
     private fun getVideoFilePath(): String {
-        val filename = "soul_video_${DateUtil.parseToString(System.currentTimeMillis(), DateUtil.yyyyMMddHHmmss)}.mp4"
+        val filename = "soul_video_${DateUtil.parseToString(
+            System.currentTimeMillis(),
+            DateUtil.yyyyMMddHHmmss
+        )}.mp4"
         val dir = SdCardUtil.DEFAULT_VIDEO_PATH
         return "${dir}/$filename"
 
@@ -709,7 +817,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
      * 保存图片地址
      */
     private fun getPictureFilePath(): String {
-        val filename = "soul_picture_${DateUtil.parseToString(System.currentTimeMillis(), DateUtil.yyyyMMddHHmmss)}.jpg"
+        val filename = "soul_picture_${DateUtil.parseToString(
+            System.currentTimeMillis(),
+            DateUtil.yyyyMMddHHmmss
+        )}.jpg"
         val dir = SdCardUtil.DEFAULT_PHOTO_PATH
         return "${dir}/$filename"
 
@@ -795,56 +906,59 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
                 add(previewSurface)
                 add(recorderSurface)
             }
-            previewRequestBuilder = cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
-                addTarget(previewSurface)
-                addTarget(recorderSurface)
+            previewRequestBuilder =
+                cameraDevice!!.createCaptureRequest(CameraDevice.TEMPLATE_RECORD).apply {
+                    addTarget(previewSurface)
+                    addTarget(recorderSurface)
 
-                //判断预览之前有没有开闪光灯
-                if (isLightOn) {
-                    set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
-                } else {
-                    set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+                    //判断预览之前有没有开闪光灯
+                    if (isLightOn) {
+                        set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_TORCH)
+                    } else {
+                        set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF)
+                    }
+
                 }
-
-            }
 
             // Start a capture session
             // Once the session starts, we can update the UI and start recording
-            cameraDevice?.createCaptureSession(surfaces,
-                    object : CameraCaptureSession.StateCallback() {
+            cameraDevice?.createCaptureSession(
+                surfaces,
+                object : CameraCaptureSession.StateCallback() {
 
-                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                            captureSession = cameraCaptureSession
-                            updatePreview()
-                            runOnUiThread {
-                                isRecordingVideo = true
-                                mediaRecorder?.start()
-                                btn_record_video.setButtonText("暂停")
-                                video_record_progress_view.visibility = View.VISIBLE
-                                video_record_progress_view.setIsStart(true)
-                                currentTime = 0
-                            }
-                            val recordTimer = Timer()
-                            val recordTask: TimerTask = object : TimerTask() {
-                                override fun run() {
-                                    currentTime++
-                                    if (currentTime > MAX_VIDEO_RECORD_TIME) {
-                                        runOnUiThread { stopRecordingVideo() }
-                                        recordTimer.cancel()
-                                    }
+                    override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                        captureSession = cameraCaptureSession
+                        updatePreview()
+                        runOnUiThread {
+                            isRecordingVideo = true
+                            mediaRecorder?.start()
+                            btn_record_video.setButtonText("暂停")
+                            video_record_progress_view.visibility = View.VISIBLE
+                            video_record_progress_view.setIsStart(true)
+                            currentTime = 0
+                        }
+                        val recordTimer = Timer()
+                        val recordTask: TimerTask = object : TimerTask() {
+                            override fun run() {
+                                currentTime++
+                                if (currentTime > MAX_VIDEO_RECORD_TIME) {
+                                    runOnUiThread { stopRecordingVideo() }
+                                    recordTimer.cancel()
                                 }
                             }
-                            recordTimer.schedule(recordTask, 1000, 1000)
                         }
+                        recordTimer.schedule(recordTask, 1000, 1000)
+                    }
 
-                        override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                            SnackbarUtil.ShortSnackbar(
-                                    window.decorView,
-                                    "Failed",
-                                    SnackbarUtil.WARNING
-                            ).show()
-                        }
-                    }, backgroundHandler)
+                    override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
+                        SnackbarUtil.ShortSnackbar(
+                            iv_record_video_close,
+                            "Failed",
+                            SnackbarUtil.WARNING
+                        ).show()
+                    }
+                }, backgroundHandler
+            )
         } catch (e: CameraAccessException) {
             Log.e(Constants.DEBUG_TAG, e.toString())
         } catch (e: IOException) {
@@ -879,9 +993,9 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
 
         if (currentTime < MIN_VIDEO_RECORD_TIME) {
             SnackbarUtil.ShortSnackbar(
-                    window.decorView,
-                    "录制时间过短",
-                    SnackbarUtil.ALERT
+                texture,
+                "录制时间过短",
+                SnackbarUtil.ALERT
             ).show()
             val tempFile = File(SdCardUtil.DEFAULT_RECORD_PATH, nextVideoAbsolutePath)
             if (tempFile.exists()) tempFile.delete()
@@ -932,10 +1046,10 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
      * @return The optimal [Size], or an arbitrary one if none were big enough
      */
     private fun chooseOptimalSize(
-            choices: Array<Size>,
-            width: Int,
-            height: Int,
-            aspectRatio: Size
+        choices: Array<Size>,
+        width: Int,
+        height: Int,
+        aspectRatio: Size
     ): Size {
 
         // Collect the supported resolutions that are at least as big as the preview Surface
@@ -957,7 +1071,8 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
     fun changeZoom(event: MotionEvent) {
         try {
             //活动区域宽度和作物区域宽度之比和活动区域高度和作物区域高度之比的最大比率
-            val maxZoom = characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) * 10
+            val maxZoom =
+                characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM) * 10
             val m = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
 
             val action = event.action
@@ -994,11 +1109,19 @@ class VideoRecordActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresent
             }
 
             try {
-                captureSession!!.setRepeatingRequest(previewRequestBuilder.build(), object : CameraCaptureSession.CaptureCallback() {
-                    override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
-                        super.onCaptureCompleted(session, request, result)
-                    }
-                }, null)
+                captureSession!!.setRepeatingRequest(
+                    previewRequestBuilder.build(),
+                    object : CameraCaptureSession.CaptureCallback() {
+                        override fun onCaptureCompleted(
+                            session: CameraCaptureSession,
+                            request: CaptureRequest,
+                            result: TotalCaptureResult
+                        ) {
+                            super.onCaptureCompleted(session, request, result)
+                        }
+                    },
+                    null
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }

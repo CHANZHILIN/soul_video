@@ -8,12 +8,10 @@ import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
 import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
-import com.kotlin_baselib.base.BaseActivity
-import com.kotlin_baselib.base.EmptyModelImpl
-import com.kotlin_baselib.base.EmptyPresenterImpl
-import com.kotlin_baselib.base.EmptyView
 import com.kotlin_baselib.media.decoder.AudioDecoder
 import com.kotlin_baselib.media.decoder.VideoDecoder
+import com.kotlin_baselib.mvvmbase.BaseViewModelActivity
+import com.kotlin_baselib.mvvmbase.EmptyViewModel
 import com.soul_video.R
 import kotlinx.android.synthetic.main.activity_edit_video.*
 import java.util.concurrent.Executors
@@ -25,7 +23,9 @@ import java.util.concurrent.Executors
  *  Introduce:编辑视频
  **/
 @Route(path = Constants.EDIT_VIDEO_ACTIVITY_PATH)
-class EditVideoActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenterImpl>(), EmptyView {
+class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
+
+    override fun providerVMClass(): Class<EmptyViewModel>? = EmptyViewModel::class.java
 
     @JvmField
     @Autowired(name = "videoPath")
@@ -38,7 +38,6 @@ class EditVideoActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenter
 
     val threadPool = Executors.newFixedThreadPool(10)
 
-    override fun createPresenter(): EmptyPresenterImpl = EmptyPresenterImpl(this)
 
     override fun getResId(): Int = R.layout.activity_edit_video
 
@@ -51,7 +50,7 @@ class EditVideoActivity : BaseActivity<EmptyView, EmptyModelImpl, EmptyPresenter
 
     override fun initData() {
         ARouter.getInstance().inject(this)
-        videoPath = "/storage/emulated/0/test.mp4"
+//        videoPath = "/storage/emulated/0/test.mp4"
         initPlayer()
 
         extractVideoFrameTask = ExtractVideoFrameTask(this, videoPath!!)
