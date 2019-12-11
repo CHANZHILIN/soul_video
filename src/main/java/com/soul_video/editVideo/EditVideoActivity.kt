@@ -3,15 +3,17 @@ package com.soul_video.editVideo
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
+import android.view.View
 import android.view.WindowManager
 import com.alibaba.android.arouter.facade.annotation.Autowired
 import com.alibaba.android.arouter.facade.annotation.Route
-import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
-import com.kotlin_baselib.media.decoder.AudioDecoder
-import com.kotlin_baselib.media.decoder.VideoDecoder
 import com.kotlin_baselib.base.BaseViewModelActivity
 import com.kotlin_baselib.base.EmptyViewModel
+import com.kotlin_baselib.media.decoder.AudioDecoder
+import com.kotlin_baselib.media.decoder.BaseDecoder
+import com.kotlin_baselib.media.decoder.IDecoderStateListener
+import com.kotlin_baselib.media.decoder.VideoDecoder
 import com.soul_video.R
 import kotlinx.android.synthetic.main.activity_edit_video.*
 import java.util.concurrent.Executors
@@ -27,6 +29,8 @@ class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
 
     override fun providerVMClass(): Class<EmptyViewModel>? = EmptyViewModel::class.java
 
+    override fun getResId(): Int = R.layout.activity_edit_video
+
     @JvmField
     @Autowired(name = "videoPath")
     var videoPath: String? = null
@@ -39,8 +43,6 @@ class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
     val threadPool = Executors.newFixedThreadPool(10)
 
 
-    override fun getResId(): Int = R.layout.activity_edit_video
-
     override fun preSetContentView() {
         super.preSetContentView()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -49,8 +51,10 @@ class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
     }
 
     override fun initData() {
-        ARouter.getInstance().inject(this)
 //        videoPath = "/storage/emulated/0/test.mp4"
+        if (intent.getStringExtra("keyVideo") != null) {
+            videoPath = intent.getStringExtra("keyVideo")
+        }
         initPlayer()
 
         extractVideoFrameTask = ExtractVideoFrameTask(this, videoPath!!)
@@ -66,21 +70,30 @@ class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
 
         btn_seek_to.setOnClickListener {
             videoDecoder.apply {
-                seekAndPlay(5000000)
+                seekAndPlay(0)
             }
             audioDecoder.apply {
-                seekAndPlay(5000000)
+                seekAndPlay(0)
             }
+
         }
         btn_pause.setOnClickListener {
             videoDecoder.pause()
             audioDecoder.pause()
+            edit_video_iv_play.visibility = View.VISIBLE
         }
         btn_start.setOnClickListener {
             videoDecoder.goOnDecode()
             audioDecoder.goOnDecode()
+            edit_video_iv_play.visibility = View.GONE
+        }
+        edit_video_iv_play.setOnClickListener {
+            videoDecoder.goOnDecode()
+            audioDecoder.goOnDecode()
+            edit_video_iv_play.visibility = View.GONE
         }
     }
+
 
 
     private fun initPlayer() {
