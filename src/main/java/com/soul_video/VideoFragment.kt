@@ -39,6 +39,8 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
         return R.layout.fragment_video
     }
 
+    private lateinit var fileData: MutableList<String>
+    private lateinit var videoData: MutableList<VideoEntity>
     private var param1: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,16 +63,15 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
 
 
     override fun initData() {
-        val videoSrc = SdCardUtil.DEFAULT_VIDEO_PATH;
-        val fileData = SdCardUtil.getFilesAllName(videoSrc)
+        fileData = SdCardUtil.getFilesAllName(SdCardUtil.DEFAULT_VIDEO_PATH)
 
-        val pictureData = ArrayList<VideoEntity>()
+        videoData = ArrayList<VideoEntity>()
         for (fileDatum in fileData) {   //封装实体类，加入随机高度，解决滑动过程中位置变换的问题
-            pictureData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
+            videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
         }
 
         fragment_video_recyclerview.setSingleUp(
-            pictureData,
+            videoData,
             R.layout.layout_item_video,
             StaggeredGridLayoutManager(Constants.SPAN_COUNT, StaggeredGridLayoutManager.VERTICAL),
             { holder, item ->
@@ -133,6 +134,19 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
         /*record_video.setOnClickListener {
             ARouter.getInstance().build(Constants.RECORD_VIDEO_ACTIVITY_PATH).navigation()
         }*/
+        fragment_video_refresh_layout.setOnRefreshListener {
+            if (fileData.size >= 0) {
+                fileData.clear()
+                videoData.clear()
+            }
+            fileData = SdCardUtil.getFilesAllName(SdCardUtil.DEFAULT_VIDEO_PATH)  //重新获取一次文件
+            for (fileDatum in fileData) {
+                videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
+            }
+            fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+
+            fragment_video_refresh_layout.isRefreshing = false
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package com.soul_video.editVideo
 
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.os.AsyncTask
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
