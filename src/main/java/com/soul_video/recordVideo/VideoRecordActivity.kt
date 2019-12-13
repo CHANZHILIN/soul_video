@@ -12,7 +12,6 @@ import android.hardware.camera2.CameraCharacteristics.SENSOR_ORIENTATION
 import android.media.CamcorderProfile
 import android.media.ImageReader
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
@@ -215,9 +214,8 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
 
     override fun preSetContentView() {
         super.preSetContentView()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+
     }
 
 
@@ -407,7 +405,7 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
 //            val characteristics = manager.getCameraCharacteristics(mCameraId)
             val map = characteristics.get(SCALER_STREAM_CONFIGURATION_MAP)
                 ?: throw RuntimeException("Cannot get available preview/video sizes")
-            sensorOrientation = characteristics.get(SENSOR_ORIENTATION)
+            sensorOrientation = characteristics.get(SENSOR_ORIENTATION)!!
             videoSize = chooseVideoSize(map.getOutputSizes(MediaRecorder::class.java))
             previewSize = chooseOptimalSize(
                 map.getOutputSizes(SurfaceTexture::class.java),

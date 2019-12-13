@@ -1,22 +1,23 @@
-package com.soul_video
+package com.soul_video.main
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Bitmap
 import android.media.ThumbnailUtils
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityOptionsCompat
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.kotlin_baselib.api.Constants
 import com.kotlin_baselib.base.BaseViewModelFragment
-import com.kotlin_baselib.base.EmptyViewModel
 import com.kotlin_baselib.glide.GlideApp
 import com.kotlin_baselib.recyclerview.decoration.StaggeredDividerItemDecoration
 import com.kotlin_baselib.recyclerview.setSingleUp
-import com.kotlin_baselib.utils.SdCardUtil
+import com.kotlin_baselib.utils.ScreenUtils
 import com.kotlin_baselib.utils.SnackbarUtil
+import com.soul_video.R
 import com.soul_video.editVideo.EditVideoActivity
 import com.soul_video.entity.VideoEntity
 import kotlinx.android.synthetic.main.fragment_video.*
@@ -31,9 +32,9 @@ private const val ARG_PARAM1 = "param1"
  *  Package:com.soul_video
  *  Introduce:视频Fragment
  **/
-class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
+class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
 
-    override fun providerVMClass(): Class<EmptyViewModel>? = EmptyViewModel::class.java
+    override fun providerVMClass(): Class<VideoViewModel>? = VideoViewModel::class.java
 
     override fun getResId(): Int {
         return R.layout.fragment_video
@@ -63,20 +64,19 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
 
 
     override fun initData() {
-        fileData = SdCardUtil.getFilesAllName(SdCardUtil.DEFAULT_VIDEO_PATH)
+//        fileData = SdCardUtil.getFilesAllName(SdCardUtil.DEFAULT_VIDEO_PATH)
 
         videoData = ArrayList<VideoEntity>()
-        for (fileDatum in fileData) {   //封装实体类，加入随机高度，解决滑动过程中位置变换的问题
-            videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
-        }
+//        for (fileDatum in fileData) {   //封装实体类，加入随机高度，解决滑动过程中位置变换的问题
+//            videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
+//        }
 
         fragment_video_recyclerview.setSingleUp(
             videoData,
             R.layout.layout_item_video,
             StaggeredGridLayoutManager(Constants.SPAN_COUNT, StaggeredGridLayoutManager.VERTICAL),
             { holder, item ->
-                val width =
-                    (holder.itemView.item_video_iv_image.getContext() as Activity).windowManager.defaultDisplay.width //获取屏幕宽度
+                val width = ScreenUtils.instance.getScreenWidth() //获取屏幕宽度
                 val params = holder.itemView.item_video_iv_image.getLayoutParams()
                 //设置图片的相对于屏幕的宽高比
                 params.width =
@@ -128,6 +128,13 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
                 Constants.ITEM_SPACE
             )
         )
+        viewModel.getVideoListData().observe(this, Observer {
+            it?.run {
+                videoData.addAll(it)
+                fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+            }
+        })
+
     }
 
     override fun initListener() {
@@ -135,17 +142,20 @@ class VideoFragment : BaseViewModelFragment<EmptyViewModel>() {
             ARouter.getInstance().build(Constants.RECORD_VIDEO_ACTIVITY_PATH).navigation()
         }*/
         fragment_video_refresh_layout.setOnRefreshListener {
-            if (fileData.size >= 0) {
-                fileData.clear()
+
+            if (videoData.size >= 0) {
                 videoData.clear()
             }
-            fileData = SdCardUtil.getFilesAllName(SdCardUtil.DEFAULT_VIDEO_PATH)  //重新获取一次文件
-            for (fileDatum in fileData) {
-                videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
-            }
-            fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+            val videoViewModel = VideoViewModel()
+            videoViewModel.getVideoListData().observe(this, Observer {
+                it?.run {
+                    videoData.addAll(it)
+                    fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+                    fragment_video_refresh_layout.isRefreshing = false
+                    lifecycle.removeObserver(videoViewModel)
+                }
+            })
 
-            fragment_video_refresh_layout.isRefreshing = false
         }
     }
 
