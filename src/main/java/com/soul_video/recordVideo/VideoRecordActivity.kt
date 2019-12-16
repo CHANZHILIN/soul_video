@@ -26,10 +26,7 @@ import com.alibaba.android.arouter.launcher.ARouter
 import com.kotlin_baselib.api.Constants
 import com.kotlin_baselib.base.BaseViewModelActivity
 import com.kotlin_baselib.base.EmptyViewModel
-import com.kotlin_baselib.utils.DateUtil
-import com.kotlin_baselib.utils.PermissionUtils
-import com.kotlin_baselib.utils.SdCardUtil
-import com.kotlin_baselib.utils.SnackbarUtil
+import com.kotlin_baselib.utils.*
 import com.soul_video.R
 import kotlinx.android.synthetic.main.activity_video_record.*
 import java.io.File
@@ -220,7 +217,11 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
 
 
     override fun initData() {
-        btn_record_video.setButtonText(if (mCameraMode == 0) "拍照" else "录制")
+        btn_record_video.setButtonText(
+            if (mCameraMode == 0) getString(R.string.capture) else getString(
+                R.string.record
+            )
+        )
         iv_switch_picture_video.setImageBitmap(
             BitmapFactory.decodeResource(
                 resources,
@@ -311,7 +312,16 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
             when (it.what) {
                 CAPTURE_OK -> {
                     //这里拍照保存完成，可以进行相关的操作，例如再次压缩等
-                    SnackbarUtil.ShortSnackbar(texture, "拍照完成，保存路径为${it.obj}", SnackbarUtil.WARNING)
+                    val finalFileName =
+                        SdCardUtil.DEFAULT_PHOTO_PATH + File.separator + "compress_${(it.obj as String).split(
+                            "/"
+                        ).last()}"
+                    BitmapUtil.compressImage(it.obj as String, finalFileName, 20, true)
+                    SnackbarUtil.ShortSnackbar(
+                        texture,
+                        "拍照完成，保存路径为${finalFileName}",
+                        SnackbarUtil.WARNING
+                    )
                         .show()
                 }
                 RECORD_VIDEO_OK -> {
@@ -607,7 +617,7 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
     private fun switchCameraMode() {
         when (mCameraMode) {
             0 -> {       //拍照换成视频
-                btn_record_video.setButtonText("录制")
+                btn_record_video.setButtonText(getString(R.string.record))
                 iv_switch_picture_video.setImageBitmap(
                     BitmapFactory.decodeResource(
                         resources,
@@ -620,7 +630,7 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
                 currentTime = 0
             }
             1 -> {        //录制视频换成拍照
-                btn_record_video.setButtonText("拍照")
+                btn_record_video.setButtonText(getString(R.string.capture))
                 iv_switch_picture_video.setImageBitmap(
                     BitmapFactory.decodeResource(
                         resources,
