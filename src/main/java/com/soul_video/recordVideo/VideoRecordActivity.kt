@@ -250,10 +250,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
         iv_switch_front_back.setOnClickListener {
             if (!isRecordingVideo)
                 switchCamera()  //切换前后摄像头
-            else SnackbarUtil.ShortSnackbar(
+            else SnackBarUtil.shortSnackBar(
                 texture,
                 "视频正在录制中，请完成录制再操作",
-                SnackbarUtil.WARNING
+                SnackBarUtil.WARNING
             ).show()
         }
 
@@ -261,10 +261,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
             if (!isRecordingVideo)
             //切换拍照，视频
                 switchCameraMode()
-            else SnackbarUtil.ShortSnackbar(
+            else SnackBarUtil.shortSnackBar(
                 texture,
                 "视频正在录制中，请完成录制再操作",
-                SnackbarUtil.WARNING
+                SnackBarUtil.WARNING
             ).show()
         }
         iv_switch_flash_light.setOnClickListener {
@@ -317,10 +317,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
                             "/"
                         ).last()}"
                     BitmapUtil.compressImage(it.obj as String, finalFileName, 20, true)
-                    SnackbarUtil.ShortSnackbar(
+                    SnackBarUtil.shortSnackBar(
                         texture,
                         "拍照完成，保存路径为${finalFileName}",
-                        SnackbarUtil.WARNING
+                        SnackBarUtil.WARNING
                     )
                         .show()
                 }
@@ -383,10 +383,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
                     }
 
                     override fun onDenied(permissionUtils: PermissionUtils) {
-                        SnackbarUtil.ShortSnackbar(
+                        SnackBarUtil.shortSnackBar(
                             texture,
                             "拒绝了权限，将无法使用相机功能",
-                            SnackbarUtil.WARNING
+                            SnackBarUtil.WARNING
                         ).show()
                         return
                     }
@@ -451,20 +451,20 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
             else
                 manager.openCamera(cameraId, stateCallback, null)
         } catch (e: CameraAccessException) {
-            SnackbarUtil.ShortSnackbar(
+            SnackBarUtil.shortSnackBar(
                 texture,
                 "打开相机失败",
-                SnackbarUtil.WARNING
+                SnackBarUtil.WARNING
             ).show()
             this.finish()
         } catch (e: NullPointerException) {
             // Currently an NPE is thrown when the Camera2API is used but not supported on the
             // device this code runs.
 
-            SnackbarUtil.ShortSnackbar(
+            SnackBarUtil.shortSnackBar(
                 texture,
                 "打开相机失败",
-                SnackbarUtil.WARNING
+                SnackBarUtil.WARNING
             ).show()
         } catch (e: InterruptedException) {
             throw RuntimeException("Interrupted while trying to lock camera opening.")
@@ -738,10 +738,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
                     }
 
                     override fun onConfigureFailed(session: CameraCaptureSession) {
-                        SnackbarUtil.ShortSnackbar(
+                        SnackBarUtil.shortSnackBar(
                             texture,
                             "Failed",
-                            SnackbarUtil.WARNING
+                            SnackBarUtil.WARNING
                         ).show()
                     }
                 }, backgroundHandler
@@ -959,10 +959,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
                     }
 
                     override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                        SnackbarUtil.ShortSnackbar(
+                        SnackBarUtil.shortSnackBar(
                             iv_record_video_close,
                             "Failed",
-                            SnackbarUtil.WARNING
+                            SnackBarUtil.WARNING
                         ).show()
                     }
                 }, backgroundHandler
@@ -1000,10 +1000,10 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
         }
 
         if (currentTime < MIN_VIDEO_RECORD_TIME) {
-            SnackbarUtil.ShortSnackbar(
+            SnackBarUtil.shortSnackBar(
                 texture,
                 "录制时间过短",
-                SnackbarUtil.ALERT
+                SnackBarUtil.ALERT
             ).show()
             val tempFile = File(SdCardUtil.DEFAULT_RECORD_PATH, nextVideoAbsolutePath)
             if (tempFile.exists()) tempFile.delete()

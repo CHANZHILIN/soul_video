@@ -16,7 +16,7 @@ import com.kotlin_baselib.recyclerview.SingleAdapter
 import com.kotlin_baselib.recyclerview.decoration.StaggeredDividerItemDecoration
 import com.kotlin_baselib.recyclerview.setSingleItemUp
 import com.kotlin_baselib.utils.ScreenUtils
-import com.kotlin_baselib.utils.SnackbarUtil
+import com.kotlin_baselib.utils.SnackBarUtil
 import com.soul_video.R
 import com.soul_video.editVideo.EditVideoActivity
 import com.soul_video.entity.VideoEntity
@@ -115,10 +115,10 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
             },
             StaggeredGridLayoutManager(Constants.SPAN_COUNT, StaggeredGridLayoutManager.VERTICAL),
             {position, it ->
-                SnackbarUtil.ShortSnackbar(
+                SnackBarUtil.shortSnackBar(
                     fragment_video_recyclerview,
                     "点击${it.path}！",
-                    SnackbarUtil.CONFIRM
+                    SnackBarUtil.CONFIRM
                 )
                     .show()
             }
