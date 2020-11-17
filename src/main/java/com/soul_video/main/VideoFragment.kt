@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.media.ThumbnailUtils
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.lifecycle.Observer
@@ -13,8 +12,9 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.kotlin_baselib.api.Constants
 import com.kotlin_baselib.base.BaseViewModelFragment
 import com.kotlin_baselib.glide.GlideApp
+import com.kotlin_baselib.recyclerview.SingleAdapter
 import com.kotlin_baselib.recyclerview.decoration.StaggeredDividerItemDecoration
-import com.kotlin_baselib.recyclerview.setSingleUp
+import com.kotlin_baselib.recyclerview.setSingleItemUp
 import com.kotlin_baselib.utils.ScreenUtils
 import com.kotlin_baselib.utils.SnackbarUtil
 import com.soul_video.R
@@ -42,6 +42,7 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
 
     private lateinit var fileData: MutableList<String>
     private lateinit var videoData: MutableList<VideoEntity>
+    private var videoAdapter: SingleAdapter<VideoEntity>? = null
     private var param1: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,11 +72,10 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
 //            videoData.add(VideoEntity(fileDatum, (200 + Math.random() * 400).toInt()))
 //        }
 
-        fragment_video_recyclerview.setSingleUp(
+        videoAdapter = fragment_video_recyclerview.setSingleItemUp(
             videoData,
             R.layout.layout_item_video,
-            StaggeredGridLayoutManager(Constants.SPAN_COUNT, StaggeredGridLayoutManager.VERTICAL),
-            { holder, item ->
+            {  _,holder, item ->
                 val width = ScreenUtils.instance.getScreenWidth() //获取屏幕宽度
                 val params = holder.itemView.item_video_iv_image.getLayoutParams()
                 //设置图片的相对于屏幕的宽高比
@@ -113,7 +113,8 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
                     startActivity(i, optionsCompat.toBundle())
                 }
             },
-            {
+            StaggeredGridLayoutManager(Constants.SPAN_COUNT, StaggeredGridLayoutManager.VERTICAL),
+            {position, it ->
                 SnackbarUtil.ShortSnackbar(
                     fragment_video_recyclerview,
                     "点击${it.path}！",
@@ -130,8 +131,7 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
         )
         viewModel.getVideoListData().observe(this, Observer {
             it?.run {
-                videoData.addAll(it)
-                fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+                videoAdapter?.replaceData(this)
             }
         })
 
@@ -149,8 +149,7 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
             val videoViewModel = VideoViewModel()
             videoViewModel.getVideoListData().observe(this, Observer {
                 it?.run {
-                    videoData.addAll(it)
-                    fragment_video_recyclerview.adapter!!.notifyDataSetChanged()
+                    videoAdapter?.replaceData(this)
                     fragment_video_refresh_layout.isRefreshing = false
                     lifecycle.removeObserver(videoViewModel)
                 }
