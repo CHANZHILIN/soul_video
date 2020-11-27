@@ -42,14 +42,14 @@ class EditVideoActivity : BaseViewModelActivity<EmptyViewModel>() {
     lateinit var audioDecoder: AudioDecoder
 
     val threadPool = Executors.newFixedThreadPool(10)
+    override fun isTransparentPage(): Boolean  = true
 
-
-    override fun preSetContentView() {
+/*    override fun preSetContentView() {
         super.preSetContentView()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
-    }
+    }*/
 
     override fun initData() {
 //        videoPath = "/storage/emulated/0/test.mp4"

@@ -76,8 +76,8 @@ class VideoFragment : BaseViewModelFragment<VideoViewModel>() {
             videoData,
             R.layout.layout_item_video,
             {  _,holder, item ->
-                val width = ScreenUtils.instance.getScreenWidth() //获取屏幕宽度
-                val params = holder.itemView.item_video_iv_image.getLayoutParams()
+                val width = ScreenUtils.screenWidth //获取屏幕宽度
+                val params = holder.itemView.item_video_iv_image.layoutParams
                 //设置图片的相对于屏幕的宽高比
                 params.width =
                     (width - (Constants.SPAN_COUNT + 1) * Constants.ITEM_SPACE) / Constants.SPAN_COUNT

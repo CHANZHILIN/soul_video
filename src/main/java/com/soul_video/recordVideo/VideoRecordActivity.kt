@@ -208,12 +208,12 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
         }
 
     }
-
-    override fun preSetContentView() {
+    override fun isTransparentPage(): Boolean  = true
+  /*  override fun preSetContentView() {
         super.preSetContentView()
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
 
-    }
+    }*/
 
 
     override fun initData() {
