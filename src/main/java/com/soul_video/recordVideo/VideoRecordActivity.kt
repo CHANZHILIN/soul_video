@@ -219,7 +219,7 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
     override fun initData() {
         btn_record_video.setButtonText(
             if (mCameraMode == 0) getString(R.string.capture) else getString(
-                R.string.record
+                R.string.record_video
             )
         )
         iv_switch_picture_video.setImageBitmap(
@@ -617,7 +617,7 @@ class VideoRecordActivity : BaseViewModelActivity<EmptyViewModel>() {
     private fun switchCameraMode() {
         when (mCameraMode) {
             0 -> {       //拍照换成视频
-                btn_record_video.setButtonText(getString(R.string.record))
+                btn_record_video.setButtonText(getString(R.string.record_video))
                 iv_switch_picture_video.setImageBitmap(
                     BitmapFactory.decodeResource(
                         resources,
